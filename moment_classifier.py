@@ -1,5 +1,6 @@
 import cv2
 import os
+import numpy as np
 import moment_map
 
 # User Input
@@ -11,24 +12,33 @@ OUTPUT_DIR = "output"
 OUTPUT_CSV_PATH = os.path.join(OUTPUT_DIR, "output.csv")
 INITIAL_MOMENT = 0
 video_name = os.path.basename(ABSOLUTE_VIDEO_PATH).split(".")[0]
+output_images_name = video_name + "_images_np"
+absolute_images_np_path = os.path.join(OUTPUT_DIR, output_images_name) + ".npy"
 
 
-def write_all_images():
-    cap = cv2.VideoCapture(ABSOLUTE_VIDEO_PATH)
-    iteration = 0
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if ret:
-            cv2.imwrite(
-                get_frame_absolute_path(get_frame_name_from_iteration(iteration)),
-                frame,
-            )
-        else:
-            break
+def np_array_from_images():
+    if not os.path.exists(absolute_images_np_path):
+        print("NP Array does not exist, creating...")
 
-        # write an updating frame number to the same terminal line
-        print(f"\rWrote Frame {iteration}", end="")
-        iteration += 1
+        cap = cv2.VideoCapture(ABSOLUTE_VIDEO_PATH)
+        image_lst = []
+        iteration = 0
+
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if ret:
+                image_lst.append(frame)
+                print(f"\rReading Frame #{iteration}", end="")
+                iteration += 1
+            else:
+                break
+        print()
+        print("Complete. Saving...", end="")
+        images_np = np.array(image_lst)
+        np.save(absolute_images_np_path, images_np)
+        print("Done.")
+
+    return np.load(absolute_images_np_path)
 
 
 def get_frame_name_from_iteration(iteration):
@@ -43,16 +53,15 @@ def get_next_moment(current_moment):
     return (current_moment + 1) % len(MOMENT_MAP)
 
 
-def update_frame_class(frame_name, class_name):
-    output_file = open(OUTPUT_CSV_PATH, "a")
-    output_file.write(f"{frame_name},{class_name}\n")
-    output_file.close()
+def update_frame_class(frame_index, class_name):
+    with open(OUTPUT_CSV_PATH, "a") as output_file:
+        output_file.write(f"{frame_index},{class_name}\n")
 
 
 def remove_last_frame_update():
-    output_file = open(OUTPUT_CSV_PATH, "w")
-    all_lines = output_file.readlines()
-    output_file.write(all_lines[:-1])
+    with open(OUTPUT_CSV_PATH, "rw") as output_file:
+        all_lines = output_file.readlines()
+        output_file.write(all_lines[:-1])
 
 
 def delete_frame(absolute_file_path):
@@ -65,17 +74,11 @@ def get_current_iteration_from_file():
         if len(lines) == 0:
             return 0
         else:
-            return int(lines[-1].split(",")[0].split("_")[-1])
+            return int(lines[-1].split(",")[0])
 
 
-def get_max_iteration_from_dir():
-    img_files = [f for f in os.listdir(OUTPUT_DIR) if f.endswith(".jpg")]
-    max_file_name = max(img_files, key=lambda f: int("".join(filter(str.isdigit, f))))
-    return int("".join(filter(str.isdigit, max_file_name.split("_")[-1])))
-
-
-def classify_images():
-    max_iteration = get_max_iteration_from_dir()
+def classify_images(im_arr):
+    max_iteration = im_arr.shape[0]
     current_iteration = get_current_iteration_from_file()
     current_moment = INITIAL_MOMENT
 
@@ -132,6 +135,9 @@ def classify_images():
 if __name__ == "__main__":
     if not os.path.exists(OUTPUT_DIR):
         os.mkdir(OUTPUT_DIR)
-        write_all_images()
 
-    classify_images()
+    print("Loading images to memory...", end="")
+    np_im_arr = np_array_from_images()
+    print("Done loading images.")
+
+    # classify_images(np_im_arr)
