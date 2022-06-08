@@ -1,7 +1,9 @@
 import cv2
 import os
 import numpy as np
+import pandas as pd
 import moment_map
+
 
 # User Input
 ABSOLUTE_VIDEO_PATH = "G:\Shared drives\P4P\Data Collection\Squats\IMG_2167.MOV"
@@ -11,10 +13,12 @@ MOMENT_MAP = moment_map.MOMENT_MAP_SQUAT
 OUTPUT_DIR = "output"
 INITIAL_MOMENT = 0
 MOMENT_MAP = moment_map.MOMENT_MAP_SQUAT
-DEFAULT_PLAYBACK_FPS = 10
+DEFAULT_PLAYBACK_FPS = 30
 OPEN_CV_COLOUR_MAP = [0, 1, 3, 5, 6, 7, 8, 10, 11]
 
 video_name = os.path.basename(ABSOLUTE_VIDEO_PATH).split(".")[0]
+OUTPUT_CSV_PATH = os.path.join(OUTPUT_DIR, f"{video_name}_labels.csv")
+
 output_images_name = video_name + "_images_np"
 absolute_images_np_path = os.path.join(OUTPUT_DIR, output_images_name) + ".npy"
 
@@ -47,25 +51,32 @@ def get_next_moment(current_moment):
     return (current_moment + 1) % len(MOMENT_MAP)
 
 
-def update_frame_class(output_csv_path, frame_index, class_name):
-    with open(output_csv_path, "a") as output_file:
-        output_file.write(f"{frame_index},{class_name}\n")
+def create_or_update_log(class_labels):
+    if os.path.exists(OUTPUT_CSV_PATH):
+        df = pd.read_csv(OUTPUT_CSV_PATH)
+    else:
+        df = pd.DataFrame()
+
+    num_cols = len(df.columns)
+    df[f"Run_{num_cols+1}"] = class_labels
+    df.to_csv(OUTPUT_CSV_PATH, index=False)
+
+    return df
 
 
-def get_current_iteration_from_file(output_csv_path):
-    if os.path.exists(output_csv_path):
-        with open(output_csv_path, "r") as output_file:
-            lines = output_file.readlines()
-            if len(lines) > 0:
-                iteration, class_name = lines[-1].split(",")
-                return int(iteration), int(class_name)
+def create_modal_csv(df):
+    # take modal class across columns in dataframe
+    modal_series = df.mode(axis=1)[0]
+    modal_series = modal_series.astype(int)
 
-    return 0, INITIAL_MOMENT
+    modal_series.to_csv(
+        os.path.join(OUTPUT_DIR, f"{video_name}_modal_labels.csv"), index=False
+    )
 
 
-def classify_images(output_csv_path, im_arr):
+def classify_images(im_arr):
     max_iteration = im_arr.shape[0]
-    current_iteration, current_moment = get_current_iteration_from_file(output_csv_path)
+    current_iteration, current_moment = 0, INITIAL_MOMENT
 
     # setup window
     window_name = "Classify frame"
@@ -85,29 +96,33 @@ def classify_images(output_csv_path, im_arr):
         )
         cv2.imshow(window_name, coloured_image)
 
-        match cv2.waitKey(1000 // DEFAULT_PLAYBACK_FPS):
-            case -1:
-                # no input
-                class_labels.append(current_moment)
-            case ord("q"):
-                cv2.destroyAllWindows()
-                exit()
-            case ord("n"):
-                current_moment = get_next_moment(current_moment)
-                class_labels.append(current_moment)
-            case ord(" "):
-                print()
-                print("Paused. Press enter to continue.")
-                cv2.waitKey(0)
-            case _:
-                # any other key, repeat current iteration
-                print(f"Invalid key pressed")
-                continue
+        key = cv2.waitKey(1000 // DEFAULT_PLAYBACK_FPS)
+        if key == -1:
+            # no input
+            class_labels.append(current_moment)
+        elif key == ord("q"):
+            cv2.destroyAllWindows()
+            exit()
+        elif key == ord("n"):
+            current_moment = get_next_moment(current_moment)
+            class_labels.append(current_moment)
+        elif key == ord(" "):
+            print()
+            print("Paused. Press enter to continue.")
+            cv2.waitKey(0)
+            continue
+        else:
+            # any other key, repeat current iteration
+            print(f"Invalid key pressed")
+            continue
 
         current_iteration += 1
 
     print()
     print(f"Succesfully wrote {current_iteration+1} frames.")
+
+    df = create_or_update_log(class_labels)
+    create_modal_csv(df)
 
 
 if __name__ == "__main__":
@@ -116,21 +131,8 @@ if __name__ == "__main__":
 
     output_iteration = 0
 
-    try:
-        output_iteration = int(
-            input("Which output iteration to make/continue? (default 0) ")
-        )
-        if output_iteration < 0:
-            raise ValueError
-    except:
-        output_iteration = 0
-
-    output_csv_path = os.path.join(
-        OUTPUT_DIR, f"{video_name}_output_{output_iteration}.csv"
-    )
-
     print("Loading images to memory...", end="")
     np_im_arr = np_array_from_images()
     print("Done")
 
-    classify_images(output_csv_path, np_im_arr)
+    classify_images(np_im_arr)
