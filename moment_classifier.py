@@ -7,13 +7,12 @@ import moment_map
 
 # User Input
 ABSOLUTE_VIDEO_PATH = "G:\Shared drives\P4P\Data Collection\Squats\IMG_2167.MOV"
-MOMENT_MAP = moment_map.MOMENT_MAP_SQUAT
+OUTPUT_DIR = "output"
+DEFAULT_PLAYBACK_FPS = 30
 
 # Constants
-OUTPUT_DIR = "output"
 INITIAL_MOMENT = 0
 MOMENT_MAP = moment_map.MOMENT_MAP_SQUAT
-DEFAULT_PLAYBACK_FPS = 30
 OPEN_CV_COLOUR_MAP = [0, 1, 3, 5, 6, 7, 8, 10, 11]
 
 video_name = os.path.basename(ABSOLUTE_VIDEO_PATH).split(".")[0]
