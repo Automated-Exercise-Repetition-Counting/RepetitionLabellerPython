@@ -1,9 +1,9 @@
-﻿# MomentClassifierLabellerPython
+# MomentClassifierLabellerPython
 
 ## Installation
 With a valid Python installation, navigate to the root folder of the project, and install all requirements with `pip install -r requirements.txt`.
 
-## Prparing the script
+## Preparing the script
 Open [`moment_classifier.py`](./moment_classifier.py), and edit the elemnes in the user input field. 
 
 `ABSOLUTE_VIDEO_PATH`: path to the video input. This should be trimmed to include only repetitions. 
