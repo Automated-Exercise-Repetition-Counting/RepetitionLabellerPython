@@ -75,6 +75,8 @@ def classify_images(output_csv_path, im_arr):
     print("press any key to begin")
     cv2.waitKey(0)
 
+    class_labels = []
+
     while current_iteration < max_iteration:
         print(f"\rCurrent Moment: {MOMENT_MAP[current_moment]}            ", end="")
         coloured_image = cv2.applyColorMap(
@@ -86,17 +88,14 @@ def classify_images(output_csv_path, im_arr):
         match cv2.waitKey(1000 // DEFAULT_PLAYBACK_FPS):
             case -1:
                 # no input
-                update_frame_class(output_csv_path, current_iteration, current_moment)
-            case 113:
-                # q
+                class_labels.append(current_moment)
+            case ord("q"):
                 cv2.destroyAllWindows()
                 exit()
-            case 110:
-                # n
+            case ord("n"):
                 current_moment = get_next_moment(current_moment)
-                update_frame_class(output_csv_path, current_iteration, current_moment)
-            case 32:
-                # space
+                class_labels.append(current_moment)
+            case ord(" "):
                 print()
                 print("Paused. Press enter to continue.")
                 cv2.waitKey(0)
