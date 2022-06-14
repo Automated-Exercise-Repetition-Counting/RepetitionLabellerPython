@@ -33,6 +33,7 @@ def np_array_from_images():
         while cap.isOpened():
             ret, frame = cap.read()
             if ret:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 image_lst.append(frame)
                 print(f"Reading Frame #{iteration}", end="\r")
                 iteration += 1
@@ -43,11 +44,11 @@ def np_array_from_images():
         np.save(absolute_images_np_path, images_np)
         print("Done.", end="\r")
 
-    return np.load(absolute_images_np_path)
+    print("Loading NP Array...", end="")
+    image_arr = np.load(absolute_images_np_path)
+    print("Done.")
 
-
-def get_next_moment(current_moment):
-    return (current_moment + 1) % len(MOMENT_MAP)
+    return image_arr
 
 
 def create_or_update_log(class_labels):
@@ -88,10 +89,13 @@ def classify_images(im_arr):
     class_labels = []
 
     while current_iteration < max_iteration:
-        print(f"\rCurrent Moment: {MOMENT_MAP[current_moment]}            ", end="")
+        im_rgb = im_arr[current_iteration]
+        # convert image to bgr from rgb
+        im_bgr = cv2.cvtColor(im_rgb, cv2.COLOR_RGB2BGR)
+
         coloured_image = cv2.applyColorMap(
-            im_arr[current_iteration],
-            OPEN_CV_COLOUR_MAP[current_moment % len(OPEN_CV_COLOUR_MAP)],
+            im_bgr,
+            OPEN_CV_COLOUR_MAP[current_reps % len(OPEN_CV_COLOUR_MAP)],
         )
         cv2.imshow(window_name, coloured_image)
 
