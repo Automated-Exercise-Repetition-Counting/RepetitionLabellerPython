@@ -73,11 +73,21 @@ def create_modal_csv(df):
 
     # rename to "Modal Rep"
     modal_series.rename("Modal Rep", inplace=True)
+    modal_prefix = f"{video_name}_modal_labels_"
 
     num_runs = len(df.columns)
     if num_runs > 2:
+        # delete previous modal csv if it exists
+
+        # list files in ouput dir, and filter out non-csv files
+        files = os.listdir(output_dir)
+        csv_files = [f for f in files if modal_prefix in f]
+        for f in csv_files:
+            os.remove(os.path.join(output_dir, f))
+
+        # save new csv
         modal_series.to_csv(
-            os.path.join(output_dir, f"{video_name}_modal_labels_{num_runs}_runs.csv"), index=False
+            os.path.join(output_dir, f"{modal_prefix}{num_runs}_runs.csv"), index=False
         )
 
 
@@ -123,6 +133,9 @@ def classify_images(im_arr):
             print("Paused. Press enter to continue.")
             cv2.waitKey(0)
             continue
+        elif key == ord("r"):
+            cv2.destroyAllWindows()
+            return
         else:
             # any other key, repeat current iteration
             print(f"Invalid key pressed")
