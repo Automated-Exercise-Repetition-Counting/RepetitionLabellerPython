@@ -6,16 +6,16 @@ import pandas as pd
 
 # User Input
 ABSOLUTE_VIDEO_PATH = "G:\Shared drives\P4P\Data Collection\Squats\IMG_2167.MOV"
-OUTPUT_DIR_BASENAME = "output"
+OUTPUT_DIR_BASEPATH = os.getcwd()
 DEFAULT_PLAYBACK_FPS = 30
 
 # Constants
-OPEN_CV_COLOUR_MAP = [0, 1, 3, 5, 6, 7, 8, 10, 11]
+OPEN_CV_COLOUR_MAP = [0, 1, 3, 5]
 
 # Inferred Constants
 video_name = os.path.basename(ABSOLUTE_VIDEO_PATH).split(".")[0]
-output_dir = f"{video_name}_{OUTPUT_DIR_BASENAME}"
-output_csv_path = os.path.join(output_dir, f"{video_name}_labels.csv")
+output_dir = f"{video_name}_output"
+output_csv_path = os.path.join(OUTPUT_DIR_BASEPATH, output_dir, f"{video_name}_labels.csv")
 absolute_images_np_path = os.path.join(output_dir, f"{video_name}_images") + ".npy"
 
 
