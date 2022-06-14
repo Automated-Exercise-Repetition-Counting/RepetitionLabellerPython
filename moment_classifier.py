@@ -71,9 +71,14 @@ def create_modal_csv(df):
     modal_series = df.mode(axis=1)[0]
     modal_series = modal_series.astype(int)
 
-    modal_series.to_csv(
-        os.path.join(output_dir, f"{video_name}_modal_labels.csv"), index=False
-    )
+    # rename to "Modal Rep"
+    modal_series.rename("Modal Rep", inplace=True)
+
+    num_runs = len(df.columns)
+    if num_runs > 2:
+        modal_series.to_csv(
+            os.path.join(output_dir, f"{video_name}_modal_labels_{num_runs}_runs.csv"), index=False
+        )
 
 
 def classify_images(im_arr):
@@ -125,9 +130,9 @@ def classify_images(im_arr):
 
         current_iteration += 1
 
+    cv2.destroyAllWindows()
     print()
     print(f"Succesfully wrote {current_iteration+1} frames.")
-
     df = create_or_update_log(class_labels)
     create_modal_csv(df)
 
@@ -142,4 +147,8 @@ if __name__ == "__main__":
     np_im_arr = np_array_from_images()
     print("Done")
 
-    classify_images(np_im_arr)
+    not_done = True
+    while not_done: 
+        classify_images(np_im_arr)
+        not_done = input("Classify the same video again? (y/[n]) ") == "y"
+
