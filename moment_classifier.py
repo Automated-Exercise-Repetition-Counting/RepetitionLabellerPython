@@ -6,17 +6,17 @@ import pandas as pd
 
 # User Input
 ABSOLUTE_VIDEO_PATH = "G:\Shared drives\P4P\Data Collection\Squats\IMG_2167.MOV"
-OUTPUT_DIR = "output"
+OUTPUT_DIR_BASENAME = "output"
 DEFAULT_PLAYBACK_FPS = 30
 
 # Constants
 OPEN_CV_COLOUR_MAP = [0, 1, 3, 5, 6, 7, 8, 10, 11]
 
+# Inferred Constants
 video_name = os.path.basename(ABSOLUTE_VIDEO_PATH).split(".")[0]
-OUTPUT_CSV_PATH = os.path.join(OUTPUT_DIR, f"{video_name}_labels.csv")
-
-output_images_name = video_name + "_images_np"
-absolute_images_np_path = os.path.join(OUTPUT_DIR, output_images_name) + ".npy"
+output_dir = f"{video_name}_{OUTPUT_DIR_BASENAME}"
+output_csv_path = os.path.join(output_dir, f"{video_name}_labels.csv")
+absolute_images_np_path = os.path.join(output_dir, f"{video_name}_images") + ".npy"
 
 
 def np_array_from_images():
@@ -36,8 +36,13 @@ def np_array_from_images():
                 iteration += 1
             else:
                 break
-        print("Complete. Saving...", end="")
         images_np = np.array(image_lst)
+
+        if images_np.shape[0] == 0:
+            print("No images found. Exiting...")
+            exit()
+
+        print("Complete. Saving...", end="")
         np.save(absolute_images_np_path, images_np)
         print("Done.", end="\r")
 
@@ -49,14 +54,14 @@ def np_array_from_images():
 
 
 def create_or_update_log(class_labels):
-    if os.path.exists(OUTPUT_CSV_PATH):
-        df = pd.read_csv(OUTPUT_CSV_PATH)
+    if os.path.exists(output_csv_path):
+        df = pd.read_csv(output_csv_path)
     else:
         df = pd.DataFrame()
 
     num_cols = len(df.columns)
     df[f"Run_{num_cols+1}"] = class_labels
-    df.to_csv(OUTPUT_CSV_PATH, index=False)
+    df.to_csv(output_csv_path, index=False)
 
     return df
 
@@ -67,7 +72,7 @@ def create_modal_csv(df):
     modal_series = modal_series.astype(int)
 
     modal_series.to_csv(
-        os.path.join(OUTPUT_DIR, f"{video_name}_modal_labels.csv"), index=False
+        os.path.join(output_dir, f"{video_name}_modal_labels.csv"), index=False
     )
 
 
@@ -128,8 +133,8 @@ def classify_images(im_arr):
 
 
 if __name__ == "__main__":
-    if not os.path.exists(OUTPUT_DIR):
-        os.mkdir(OUTPUT_DIR)
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
 
     output_iteration = 0
 
