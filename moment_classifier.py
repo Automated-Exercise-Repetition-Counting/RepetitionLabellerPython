@@ -2,17 +2,14 @@ import cv2
 import os
 import numpy as np
 import pandas as pd
-import moment_map
 
 
 # User Input
 ABSOLUTE_VIDEO_PATH = "G:\Shared drives\P4P\Data Collection\Squats\IMG_2167.MOV"
 OUTPUT_DIR = "output"
 DEFAULT_PLAYBACK_FPS = 30
-MOMENT_MAP = moment_map.MOMENT_MAP_SQUAT
 
 # Constants
-INITIAL_MOMENT = 0
 OPEN_CV_COLOUR_MAP = [0, 1, 3, 5, 6, 7, 8, 10, 11]
 
 video_name = os.path.basename(ABSOLUTE_VIDEO_PATH).split(".")[0]
@@ -76,7 +73,7 @@ def create_modal_csv(df):
 
 def classify_images(im_arr):
     max_iteration = im_arr.shape[0]
-    current_iteration, current_moment = 0, INITIAL_MOMENT
+    current_iteration = current_reps = 0
 
     # setup window
     window_name = "Classify frame"
@@ -89,6 +86,8 @@ def classify_images(im_arr):
     class_labels = []
 
     while current_iteration < max_iteration:
+        print(f"\rCurrent Reps: {current_reps}            ", end="")
+
         im_rgb = im_arr[current_iteration]
         # convert image to bgr from rgb
         im_bgr = cv2.cvtColor(im_rgb, cv2.COLOR_RGB2BGR)
@@ -102,13 +101,13 @@ def classify_images(im_arr):
         key = cv2.waitKey(1000 // DEFAULT_PLAYBACK_FPS)
         if key == -1:
             # no input
-            class_labels.append(current_moment)
+            class_labels.append(current_reps)
         elif key == ord("q"):
             cv2.destroyAllWindows()
             exit()
         elif key == ord("n"):
-            current_moment = get_next_moment(current_moment)
-            class_labels.append(current_moment)
+            current_reps += 1
+            class_labels.append(current_reps)
         elif key == ord(" "):
             print()
             print("Paused. Press enter to continue.")
